@@ -3,6 +3,18 @@ var User = require('../models/user');
 //需要引入一个加密的模块
 var crypto = require('crypto');
 
+
+//一个权限的问题？
+//1.用户未登录的情况下，是无法访问/post ,/logout的
+//2.用户在登录的情况下，是无法访问/login,/reg 的
+//那么，如果才能完成这个权限的问题呢？
+
+function checkLogin(){
+
+}
+function checkNotLogin(){
+
+}
 module.exports = function(app){
     //首页
     app.get('/',function(req,res){
@@ -25,7 +37,7 @@ module.exports = function(app){
     //注册行为
     app.post('/reg',function(req,res){
         //数据接收req.body
-        console.log(req.body);
+        //console.log(req.body);
         //用户名
         var name = req.body.name;
         //密码
@@ -34,6 +46,11 @@ module.exports = function(app){
         var password_re = req.body['password-repeat'];
         //邮箱
         var email = req.body.email;
+        //补充一下，如果未填写的情况下，提示用户
+        if(name == '' || password == '' || password_re == '' || email == ''){
+            req.flash('error','请正确填写信息');
+            return res.redirect('/reg');
+        }
         //1.首先检查一下两次密码是否一样
         if(password_re != password){
             //先保存一下当前的错误信息
@@ -77,10 +94,36 @@ module.exports = function(app){
     })
     //登录
     app.get('/login',function(req,res){
-        res.render('login',{title:'登录'})
+        res.render('login',{
+            title:'登录',
+            user:req.session.user,
+            success:req.flash('success').toString(),
+            error:req.flash('error').toString()
+        })
     })
     //登录行为
     app.post('/login',function(req,res){
+        //1.检查下用户名有没有
+        //2.检查下密码对不对
+        //3.存储到session中用户的登录信息
+        //4.跳转到首页
+        var md5 = crypto.createHash('md5');
+        var password = md5.update(req.body.password).digest('hex');
+        User.get(req.body.name,function(err,user){
+            if(!user){
+                //说明用户名不存在
+                req.flash('error','用户名不存在');
+                return res.redirect('/login');
+            }
+            //检查两次密码是否一样
+            if(user.password != password){
+                req.flash('error','密码错误');
+                return res.redirect('/login');
+            }
+            req.session.user = user;
+            req.flash('success','登录成功');
+            res.redirect('/');
+        })
 
     })
     //发表
@@ -93,7 +136,11 @@ module.exports = function(app){
     })
     //退出
     app.get('/logout',function(req,res){
-
+        //1.清除session
+        //2.给用户提示
+        //3.跳转到首页
+        req.session.user = null;
+        req.flash('success','成功退出');
+        res.redirect('/');
     })
-
 }
