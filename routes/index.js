@@ -1,5 +1,7 @@
 //登录和注册需要的User类
 var User = require('../models/user');
+//发表需要的Post类
+var Post = require('../models/post');
 //需要引入一个加密的模块
 var crypto = require('crypto');
 
@@ -9,11 +11,20 @@ var crypto = require('crypto');
 //2.用户在登录的情况下，是无法访问/login,/reg 的
 //那么，如果才能完成这个权限的问题呢？
 
-function checkLogin(){
-
+function checkLogin(req, res, next) {
+    if (!req.session.user) {
+        req.flash('error', '未登录!');
+        res.redirect('/login');
+    }
+    next();
 }
-function checkNotLogin(){
-
+//如果登录了，是无法访问登录和注册页面的
+function checkNotLogin(req, res, next) {
+    if (req.session.user) {
+        req.flash('error', '已登录!');
+        res.redirect('back');//返回之前的页面
+    }
+    next();
 }
 module.exports = function(app){
     //首页
@@ -26,6 +37,7 @@ module.exports = function(app){
         })
     })
     //注册页面
+    app.get('/reg', checkNotLogin);
     app.get('/reg',function(req,res){
         res.render('reg',{
             title:'注册',
@@ -35,6 +47,7 @@ module.exports = function(app){
         })
     })
     //注册行为
+    app.post('/reg', checkNotLogin);
     app.post('/reg',function(req,res){
         //数据接收req.body
         //console.log(req.body);
@@ -87,12 +100,14 @@ module.exports = function(app){
                 }
                 //用户信息存入session
                 req.session.user = newUser;
+                //console.log(req.session.user);
                 req.flash('success','注册成功');
                 res.redirect('/');
             })
         })
     })
     //登录
+    app.get('/login', checkNotLogin);
     app.get('/login',function(req,res){
         res.render('login',{
             title:'登录',
@@ -102,6 +117,7 @@ module.exports = function(app){
         })
     })
     //登录行为
+    app.post('/login', checkNotLogin);
     app.post('/login',function(req,res){
         //1.检查下用户名有没有
         //2.检查下密码对不对
@@ -121,18 +137,41 @@ module.exports = function(app){
                 return res.redirect('/login');
             }
             req.session.user = user;
+            //console.log(req.session.user);
             req.flash('success','登录成功');
             res.redirect('/');
         })
 
     })
     //发表
+    app.get('/post', checkLogin);
     app.get('/post',function(req,res){
-        res.render('post',{title:'发表'})
+        res.render('post',{
+            title:'发表',
+            user:req.session.user,
+            success:req.flash('success').toString(),
+            error:req.flash('error').toString()
+        })
     })
     //发表行为
+    app.post('/post', checkLogin);
     app.post('/post',function(req,res){
-
+        //当前SESSION里面的用户信息
+        var currentUser = req.session.user;
+        //判断一下内容不能为空
+        if(req.body.title == '' || req.body.post == ''){
+            req.flash('error','内容不能为空');
+            return res.redirect('/post');
+        }
+        var post = new Post(currentUser.name,req.body.title,req.body.post);
+        post.save(function(err){
+            if(err){
+                req.flash('error',err);
+                return res.redirect('/');
+            }
+            req.flash('success','发布成功');
+            res.redirect('/');
+        })
     })
     //退出
     app.get('/logout',function(req,res){
