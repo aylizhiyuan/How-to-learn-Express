@@ -15,8 +15,10 @@
     "ejs": "~2.3.3",
     "express": "~4.13.1",
     "express-session": "1.9.1",
+    "markdown": "^0.5.0",
     "mongodb": "2.0.42",
     "morgan": "~1.6.1",
+    "multer": "^1.2.0",
     "serve-favicon": "~2.3.0"
   }
 }

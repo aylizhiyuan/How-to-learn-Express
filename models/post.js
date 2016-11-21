@@ -2,13 +2,16 @@
  * Created by hama on 2016/11/18.
  */
 var mongo = require('./db');
-
+//引入markdown插件
+var markdown = require('markdown').markdown;
 function Post(name,title,post){
     //发布人
     this.name = name;
     //标题
     this.title = title;
     //内容
+    //XSS跨站脚本攻击的预防.
+    //this.post = post.replace(/</g,'&lt;').replace(/>/g,'&gt;');
     this.post = post;
 }
 module.exports = Post;
@@ -78,6 +81,11 @@ Post.get = function(name,callback){
                 if(err){
                     return callback(err);
                 }
+                //在返回结果的时候，让markdown格式化一下
+                //就可以直接使用markdown的语法规则来解析HTML标签了。
+                docs.forEach(function(doc){
+                    doc.post = markdown.toHTML(doc.post);
+                })
                 callback(null,docs);//返回查询的文档数据.(数组形式)
             })
         })

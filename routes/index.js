@@ -4,7 +4,20 @@ var User = require('../models/user');
 var Post = require('../models/post');
 //需要引入一个加密的模块
 var crypto = require('crypto');
-
+//引入multer插件
+var multer = require('multer');
+//插件的配置信息
+var storage = multer.diskStorage({
+    //这个是上传图片的地址.
+    destination:function(req,file,cb){
+        cb(null,'public/images')
+    },
+    //上传到服务器上图片的名字.
+    filename:function(req,file,cb){
+        cb(null,file.originalname)
+    }
+})
+var upload = multer({storage:storage,size:10225});
 
 //一个权限的问题？
 //1.用户未登录的情况下，是无法访问/post ,/logout的
@@ -179,6 +192,22 @@ module.exports = function(app){
             req.flash('success','发布成功');
             res.redirect('/');
         })
+    })
+    //上传
+    app.get('/upload',checkLogin);
+    app.get('/upload',function(req,res){
+        res.render('upload',{
+            title:'文件上传',
+            user:req.session.user,
+            success:req.flash('success').toString(),
+            error:req.flash('error').toString()
+        })
+    })
+    //上传行为
+    app.post('/upload',checkLogin);
+    app.post('/upload',upload.array('field1',5),function(req,res){
+        req.flash('success','文件保存成功');
+        res.redirect('/upload');
     })
     //退出
     app.get('/logout',function(req,res){
