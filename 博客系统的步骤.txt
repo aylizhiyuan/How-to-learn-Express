@@ -1,0 +1,582 @@
+安装express 命令行工具
+npm install express-generator -g
+
+
+
+然后使用命令行工具初始化一个项目
+ express -e blog
+ cd blog && npm install
+
+
+最后
+set DEBUG=myapp & npm start
+完成对于项目的一个调试
+
+
+下载解压mongodb,并创建一个blog文件夹作为我们的数据库
+进入bin目录执行一个命令
+mongod --dbpath ../blog/
+设置blog文件夹作为我们的存储目录并启动mongodb
+
+新增一些插件
+
+    "body-parser": "~1.13.2",
+    "connect-flash": "0.1.1",
+    "connect-mongo": "0.8.2",
+    "cookie-parser": "~1.3.5",
+    "crypto": "0.0.3",
+    "debug": "~2.2.0",
+    "ejs": "~2.3.3",
+    "express": "~4.13.1",
+    "express-session": "1.9.1",
+    "mongodb": "2.0.42",
+    "morgan": "~1.6.1",
+    "serve-favicon": "~2.3.0"
+
+全局下安装一下自动启动的插件
+
+npm install -g supervisor
+
+supervisor app.js
+
+在项目当中新增一个app.listen直接让它启动运行就可以了。
+app.set('port', process.env.PORT || 3000);
+app.listen(app.get('port'), function() {
+    console.log('Express server listening on port ' + app.get('port'));
+});
+
+
+//将app引入进路由，在index.js当中设置路由就可以了
+routes(app);
+
+//然后修改index.js路由文件
+
+module.exports = function(app){
+    app.get('/',function(req,res){
+        res.render('index',{title:'Express'});
+    })
+}
+
+ejs 的标签系统非常简单，它只有以下三种标签：
+
+<% code %>：JavaScript 代码。
+<%= code %>：显示替换过 HTML 特殊字符的内容。
+<%- code %>：显示原始 HTML 内容。
+注意： <%= code %> 和 <%- code %> 的区别，当变量 code 为普通字符串时，两者没有区别。当 code 比如为 <h1>hello</h1> 这种字符串时，
+<%= code %> 会原样输出 <h1>hello</h1>，而 <%- code %> 则会显示 H1 大的 hello 字符串。
+
+***********************************************************************************************************************************
+
+/ 首页
+/login 用户登录
+/reg 用户注册
+/post 发表文章
+/logout 退出
+
+/login 和/reg 是未登录的用户访问的,/reg和/logout是登录的用户访问的.
+
+修改index.js
+
+module.exports = function(app){
+    app.get('/',function(req,res){
+        res.render('index',{title:'首页'});
+    })
+    app.get('/reg',function(req,res){
+        res.render('reg',{title:'注册'});
+    })
+    app.post('/reg',function(req,res){
+
+    })
+    app.get('/login',function(req,res){
+        res.render('login',{title:'登录'});
+    })
+    app.post('/login',function(req,res){
+
+    })
+    app.get('/post',function(req,res){
+        res.render('post',{title:'发表'});
+    })
+    app.post('/post',function(req,res){
+
+    })
+    app.get('/logout',function(req,res){
+
+    })
+}
+
+创建数据库文件setting.js在根目录下
+module.exports = {
+    cookieSecret:'lzy',
+    db:'blog',
+    host:'localhost',
+    port:27017
+}
+
+创建models文件夹，并在文件夹中写入db.js
+
+var settings = require('../settings'),
+        Db = require('mongodb').Db,
+        Connection = require('mongodb').Connection,
+        Server = require('mongodb').Server;
+    module.exports = new Db(settings.db, new Server(settings.host, settings.port),
+ {safe: true});
+
+ 打开app.js
+
+ var settings = require('./settings');引入数据库配置信息
+
+
+会话数据库话
+
+//flash模块
+var flash = require('connect-flash');
+//支持会话
+var session = require('express-session');
+//将会话保存在mongodb当中去.
+var MongoStore  = require('connect-mongo')(session);
+
+app.use(flash());
+app.use(session({
+    //防止篡改cookie
+    secret:settings.cookieSecret,
+    //设置值
+    key:settings.db,
+    //cookie的生存周期
+    cookie:{maxAge:1000*60*60*24*30},
+    //将session的信息存储到数据库当中去.
+    store: new MongoStore({
+        //连接数据库当中的blog数据库
+        url: 'mongodb://localhost/blog'
+    }),
+    resave:false,
+    saveUninitialized:true
+}));
+
+
+***************************************************************************************************************************
+
+新建一个db的文件夹存放我们的数据库
+
+mongod --dbpath c:\db 启动我们的数据库
+
+**************************************************************************************************************************
+
+创建header.ejs和footer.ejs完成首页的制作index.ejs,修改style.css文件
+
+
+
+<!DOCTYPE html>
+<html>
+<head lang="en">
+  <meta charset="UTF-8">
+  <title>Blog</title>
+  <link rel="stylesheet" href="/stylesheets/style.css">
+</head>
+<body>
+<header>
+    <h1><%= title %></h1>
+</header>
+
+<nav>
+    <span><a href="/">首页</a></span>
+    <span><a title="登录" href="/login">登录</a></span>
+    <span><a title="注册" href="/reg">注册</a></span>
+</nav>
+<article>
+
+
+</artcile>
+</body>
+</html>
+
+创建登录页面，完成表单提交页面的制作login.ejs
+
+
+<%- include header %>
+<form method="post">
+    用户：<input type="text" name="name"/><br />
+    密码：<input type="password" name="password"/><br />
+    <input type="submit" value="登录"/>
+</form>
+<%- include footer %>
+
+
+
+创建注册页面，完成注册页面的制作reg.ejs(用户名,密码,确认密码,邮箱)
+
+
+<%- include header %>
+<form method="post">
+    用户：<input type="text" name="name"/><br />
+    密码：<input type="password" name="password"/><br />
+    确认：<input type="password" name="password-repeat"/><br />
+    邮箱：<input type="email" name="email"/><br />
+    <input type="submit" value="注册"/>
+</form>
+<%- include footer %>
+
+
+
+完成注册页面的业务逻辑(引入数据库文件db.js)
+
+在models文件夹下创建user.js来完成注册用户的写入数据库行为
+
+创建一个User对象，在对象中接收用户提交的用户名、密码、邮箱,并在原型方法中添加新增用户和查询用户的方法.并将User对象暴露.
+
+新增用户的步骤是:(User.prototype.save)
+
+整理下数据--->打开数据库---->读取users集合----->将数据插入到users集合中---->回调函数中返回错误或者正确的信息
+
+function User(user){
+    this.name = user.name;
+    this.password = user.password;
+    this.email = user.email;
+};
+module.exports = User;
+
+//保存用户的注册信息
+User.prototype.save = function(callback){
+    var user = {
+        name:this.name,
+        password:this.password,
+        email:this.email
+    };
+    //通过open方法打开数据库
+    mongodb.open(function(err,db){
+        if(err){
+            return callback(err);
+        }
+        //读取users集合
+        db.collection('users',function(err,collection){
+            if(err){
+                mongodb.close();
+                return callback(err);
+            }
+            //将用户数据插入users集合当中去.
+            collection.insert(user,{safe:true},function(err,user){
+                mongodb.close();
+                if(err){
+                    return callback(err);
+                }
+                callback(null,user[0]);//成功的话返回用户名
+            })
+        })
+    })
+}
+
+查询用户的步骤是:(User.get)
+
+打开数据库 ----> 读取users集合 ----> 查找用户名(name)的文档findOne ----->回调函数中返回错误或者用户的信息
+
+//读取用户的信息
+User.get = function(name,callback){
+    //打开数据库
+    mongodb.open(function(err,db){
+        if(err){
+            return callback(err);
+        }
+        //读取users集合
+        db.collection('users',function(err,collection){
+            if(err){
+                mongodb.close();
+                return callback(err);
+            }
+            //查询用户名(name)的文档
+            collection.findOne({name:name},function(err,user){
+                if(err){
+                    return callback(err);
+                }
+                callback(null,user);//成功返回查询的用户信息
+
+            })
+
+        })
+    })
+}
+
+
+实际我们的操作都是在路由文件routes里面的index.js中进行操作的,
+这里，我们需要打开index.js用user.js来处理用户注册和登录的业务逻辑
+
+var crypto = require('crypto');
+var User = require('../models/user.js');
+
+这里我们就可以调用用户的写入和查询操作了,来完成注册的业务逻辑了
+
+比较下两次密码是否相同 -----> 生成密码的md5的值 -------> 要存入数据库中的user信息
+------>使用User.get看看用户名是否已经存在 ------>最终newUser.save存入------>把newUser放入session
+
+app.post('/reg',function(req,res){
+        var name = req.body.name;
+        var password = req.body.password;
+        var password_re = req.body['password-repeat'];
+        //检查两次密码是否一致
+        if(password_re != password){
+            req.flash('error','两次输入的密码不一致');
+            return res.redirect('/reg');//返回注册
+        }
+        //生成一下密码的md5值
+        var md5 = crypto.createHash('md5');
+        var password = md5.update(req.body.password).digest('hex');
+        //将注册信息传入User对象
+        var newUser = new User({
+            name:name,
+            password:password,
+            email:req.body.email
+        });
+
+        //检查用户名是否已经存在了
+        User.get(newUser.name,function(err,user){
+            if(err){
+                req.flash('error',err);
+                return res.redirect('/');
+            }
+            if(user){
+                req.flash('error','用户名已经存在');
+                return res.redirect('/reg');
+            }
+            //如果不存在则新增用户
+            newUser.save(function(err,user){
+                if(err){
+                    req.flash('error',err);
+                    return res.redirect('/reg');
+                }
+                //用户的信息存入session
+                req.session.user = newUser;
+                req.flash('success','注册成功');
+                res.redirect('/');
+            });
+        });
+    });
+
+现在便可以修改header.ejs文件，如果用户登录了，则不再提示用户登录注册，而提示用户发表和退出
+
+<nav>
+<span><a title="主页" href="/">首页</a></span>
+<% if (user) { %>
+  <span><a title="发表" href="/post">发布</a></span>
+  <span><a title="登出" href="/logout">退出</a></span>
+<% } else { %>
+  <span><a title="登录" href="/login">登录</a></span>
+  <span><a title="注册" href="/reg">注册</a></span>
+<% } %>
+</nav>
+
+在<article>下添加提示信息的显示
+    <% if (success) { %>
+    <div><%= success %></div>
+    <% } %>
+    <% if (error) { %>
+    <div><%= error %> </div>
+    <% } %>
+
+最后一步修改index.js文件.将首页和注册页面的get请求都加上
+            user:req.session.user,
+            success:req.flash('success').toString(),
+            error:req.flash('error').toString()
+
+
+************************************************************************************************************************
+登录和登出的业务逻辑
+
+先生成md5的密码----->使用User.get检查用户是否存在------>检查密码是否一致 ------>都正确后，将用户信息存入session
+
+        var md5 = crypto.createHash('md5');
+        var password = md5.update(req.body.password).digest('hex');
+        //检查用户名是否存在
+        User.get(req.body.name,function(err,user){
+            if(!user){
+                req.flash('error','用户名不存在');
+                return res.redirect('/login');
+            }
+            //检查密码是否一致
+            if(user.password != password){
+                req.flash('error','密码错误');
+                return res.redirect('/login');
+            }
+            //都匹配之后，将用户的信息存入session
+            req.session.user = user;
+            req.flash('success','登录成功');
+            res.redirect('/');
+        })
+
+修改get login 添加提示信息
+            user:req.session.user,
+            success:req.flash('success').toString(),
+            error:req.flash('error').toString()
+
+登出逻辑
+    req.session.user = null;
+    req.flash('success', '登出成功!');
+    res.redirect('/');//登出成功后跳转到主页
+
+*************************************************************************************************************************
+
+增加页面权限，不让登录的用户访问登录和注册页面
+
+//如果没有登录，是无法访问发表和退出页面的
+function checkLogin(req, res, next) {
+    if (!req.session.user) {
+        req.flash('error', '未登录!');
+        res.redirect('/login');
+    }
+    next();
+}
+//如果登录了，是无法访问登录和注册页面的
+function checkNotLogin(req, res, next) {
+    if (req.session.user) {
+        req.flash('error', '已登录!');
+        res.redirect('back');//返回之前的页面
+    }
+    next();
+}
+
+*******************************************************************************************
+
+发布文章页面
+
+首先创建post.ejs页面
+<%- include header %>
+<form method="post">
+    标题：<br />
+    <input type="text" name="title" /><br />
+    正文：<br />
+    <textarea name="post" rows="20" cols="100"></textarea><br />
+    <input type="submit" value="发表" />
+</form>
+<%- include footer %>
+
+创建post.js在model中，主要是文章的发布和读取 ,记得在index.js路由中添加这个文件的引用
+-------------------------------------------------------------------------------------------------
+var mongodb = require('./db');
+
+function Post(name, title, post) {
+  this.name = name;
+  this.title = title;
+  this.post = post;
+}
+
+module.exports = Post;
+
+//存储一篇文章及其相关信息
+Post.prototype.save = function(callback) {
+  var date = new Date();
+  //存储各种时间格式，方便以后扩展
+  var time = {
+      date: date,
+      year : date.getFullYear(),
+      month : date.getFullYear() + "-" + (date.getMonth() + 1),
+      day : date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate(),
+      minute : date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " +
+      date.getHours() + ":" + (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes())
+  }
+  //要存入数据库的文档
+  var post = {
+      name: this.name,
+      time: time,
+      title: this.title,
+      post: this.post
+  };
+  //打开数据库
+  mongodb.open(function (err, db) {
+    if (err) {
+      return callback(err);
+    }
+    //读取 posts 集合
+    db.collection('posts', function (err, collection) {
+      if (err) {
+        mongodb.close();
+        return callback(err);
+      }
+      //将文档插入 posts 集合
+      collection.insert(post, {
+        safe: true
+      }, function (err) {
+        mongodb.close();
+        if (err) {
+          return callback(err);//失败！返回 err
+        }
+        callback(null);//返回 err 为 null
+      });
+    });
+  });
+};
+
+//读取文章及其相关信息
+Post.get = function(name, callback) {
+  //打开数据库
+  mongodb.open(function (err, db) {
+    if (err) {
+      return callback(err);
+    }
+    //读取 posts 集合
+    db.collection('posts', function(err, collection) {
+      if (err) {
+        mongodb.close();
+        return callback(err);
+      }
+      var query = {};
+      if (name) {
+        query.name = name;
+      }
+      //根据 query 对象查询文章
+      collection.find(query).sort({
+        time: -1
+      }).toArray(function (err, docs) {
+        mongodb.close();
+        if (err) {
+          return callback(err);//失败！返回 err
+        }
+        callback(null, docs);//成功！以数组形式返回查询的结果
+      });
+    });
+  });
+};
+------------------------------------------------------------------------------------------------------------------------
+最后写入发表的业务逻辑
+
+ var currentUser = req.session.user,
+ post = new Post(currentUser.name, req.body.title, req.body.post);
+ post.save(function (err) {
+    if (err) {
+      req.flash('error', err);
+      return res.redirect('/');
+    }
+    req.flash('success', '发布成功!');
+    res.redirect('/');//发表成功跳转到主页
+  });
+
+------------------------------------------------------------------------------------------------------------------------
+在index.ejs中显示文章
+
+<%- include header %>
+<% posts.forEach(function (post, index) { %>
+  <p><h2><a href="#"><%= post.title %></a></h2></p>
+  <p class="info">
+    作者：<a href="#"><%= post.name %></a> |
+    日期：<%= post.time.minute %>
+  </p>
+  <p><%- post.post %></p>
+<% }) %>
+<%- include footer %>
+
+修改下index.js中访问首页的业务逻辑
+
+app.get('/', function (req, res) {
+  Post.get(null, function (err, posts) {
+    if (err) {
+      posts = [];
+    }
+    res.render('index', {
+      title: '主页',
+      user: req.session.user,
+      posts: posts,
+      success: req.flash('success').toString(),
+      error: req.flash('error').toString()
+    });
+  });
+});
+
+别忘了给发表页面也添加user,success,error变量
+***********************************************************************************************************************
+
