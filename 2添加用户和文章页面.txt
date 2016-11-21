@@ -1,0 +1,119 @@
+实现用户页面和文章页面
+
+打开 post.js ，将 Post.get 修改为 Post.getAll ，
+同时将 index.js 中 Post.get 修改为 Post.getAll 。
+在 post.js 最后添加如下代码：
+
+//获取一篇文章
+Post.getOne = function(name,day,title,callback){
+    //打开数据库
+    mongodb.open(function(err,db){
+        if(err){
+            return callback(err);
+        }
+        //读取post集合
+        db.collection('posts',function(err,collection){
+            if(err){
+                mongodb.close();
+                return callback(err);
+            }
+            //可以根据用户名、发表日期以及文章名进行查询
+            collection.findOne({
+                "name":name,
+                "time.day":day,
+                "title":title
+            },function(err,doc){
+                mongodb.close();
+                if(err){
+                    return callback(err);
+                }
+                //解析markdown为HTML
+                doc.post = markdown.toHTML(doc.post);
+                callback(null,doc);//返回查询的一篇文章
+            })
+        })
+    })
+}
+
+然后添加用户页面的路由
+
+app.get('/u/:name', function (req, res) {
+  //检查用户是否存在
+  User.get(req.params.name, function (err, user) {
+    if (!user) {
+      req.flash('error', '用户不存在!');
+      return res.redirect('/');//用户不存在则跳转到主页
+    }
+    //查询并返回该用户的所有文章
+    Post.getAll(user.name, function (err, posts) {
+      if (err) {
+        req.flash('error', err);
+        return res.redirect('/');
+      }
+      res.render('user', {
+        title: user.name,
+        posts: posts,
+        user : req.session.user,
+        success : req.flash('success').toString(),
+        error : req.flash('error').toString()
+      });
+    });
+  });
+});
+
+添加文章页面的路由
+app.get('/u/:name/:day/:title', function (req, res) {
+  Post.getOne(req.params.name, req.params.day, req.params.title, function (err, post) {
+    if (err) {
+      req.flash('error', err);
+      return res.redirect('/');
+    }
+    res.render('article', {
+      title: req.params.title,
+      post: post,
+      user: req.session.user,
+      success: req.flash('success').toString(),
+      error: req.flash('error').toString()
+    });
+  });
+});
+
+最后创建user.ejs用户模板 和修改index.ejs
+
+<%- include header %>
+<% posts.forEach(function (post, index) { %>
+  <p><h2>
+  <a href="/u/<%= post.name %>/<%= post.time.day %>/<%= post.title %>"><%= post.title %></a>
+  </h2></p>
+  <p class="info">
+    作者：<a href="/u/<%= post.name %>"><%= post.name %></a> |
+    日期：<%= post.time.minute %>
+  </p>
+  <p><%- post.post %></p>
+<% }) %>
+<%- include footer %>
+
+article.ejs模板
+
+<%- include header %>
+<p class="info">
+  作者：<a href="/u/<%= post.name %>"><%= post.name %></a> |
+  日期：<%= post.time.minute %>
+</p>
+<p><%- post.post %></p>
+<%- include footer %>
+
+//将index.ejs里面的href修改为
+
+<%- include header %>
+<% posts.forEach(function (post, index) { %>
+  <p><h2>
+  <a href="u/<%= post.name %>/<%= post.time.day %>/<%= post.title %>"><%= post.title %></a>
+  </h2></p>
+  <p class="info">
+    作者：<a href="u/<%= post.name %>"><%= post.name %></a> |
+    日期：<%= post.time.minute %>
+  </p>
+  <p><%- post.post %></p>
+  <% }) %>
+<%- include footer %>

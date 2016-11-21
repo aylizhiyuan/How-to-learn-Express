@@ -1,0 +1,70 @@
+下载markdown  http://wowubuntu.com/markdown/
+
+安装markdown
+
+npm install markdown
+
+在post.js中引入markdown
+
+var markdown = require('markdown').markdown;
+
+在callback之前，添加一行代码
+
+//解析 markdown 为 html
+docs.forEach(function (doc) {
+  doc.post = markdown.toHTML(doc.post);
+});
+
+安装multer
+
+npm install multer
+
+配置multer 记住，一定是在index.js当中进行添加的.
+
+var multer  = require('multer');
+//新的使用方法配置multer
+var storage = multer.diskStorage({
+    destination: function (req, file, cb){
+        cb(null, './public/images')
+    },
+    filename: function (req, file, cb){
+        cb(null, file.originalname)
+    }
+});
+var upload = multer({
+    storage: storage
+});
+
+新增上传页面,在header.ejs中
+<span><a href="/upload">上传</a></span>
+
+然后创建upload.ejs页面
+
+<%- include header %>
+<form method='post' action='/upload' enctype='multipart/form-data' >
+  <input type="file" multiple name='field1'/><br>
+  <input type="submit" />
+</form>
+<%- include footer %>
+
+新增打开上传页面的逻辑
+
+app.get('/upload', checkLogin);
+app.get('/upload', function (req, res) {
+  res.render('upload', {
+    title: '文件上传',
+    user: req.session.user,
+    success: req.flash('success').toString(),
+    error: req.flash('error').toString()
+  });
+});
+app.post('/upload', checkLogin);
+app.post('/upload', upload.array('field1', 5), function (req, res) {
+  req.flash('success', '文件上传成功!');
+  res.redirect('/upload');
+});
+
+最后在发表的文章中加入这张图片试试
+
+
+

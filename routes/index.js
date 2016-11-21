@@ -29,12 +29,19 @@ function checkNotLogin(req, res, next) {
 module.exports = function(app){
     //首页
     app.get('/',function(req,res){
-        res.render('index',{
-            title:'主页',
-            user:req.session.user,
-            success:req.flash('success').toString(),
-            error:req.flash('error').toString()
-        })
+        Post.get(null,function(err,posts){
+            if(err){
+                posts = [];
+            }
+            res.render('index',{
+                title:'主页',
+                user:req.session.user,
+                //所有的文章
+                posts:posts,
+                success:req.flash('success').toString(),
+                error:req.flash('error').toString()
+            })
+        });
     })
     //注册页面
     app.get('/reg', checkNotLogin);
