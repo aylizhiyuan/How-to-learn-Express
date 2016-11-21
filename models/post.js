@@ -58,8 +58,8 @@ Post.prototype.save  = function(callback){
         })
     })
 }
-//获取文章
-Post.get = function(name,callback){
+//获取所有的文章
+Post.getAll = function(name,callback){
     mongo.open(function(err,db){
         if(err){
             return callback(err);
@@ -87,6 +87,33 @@ Post.get = function(name,callback){
                     doc.post = markdown.toHTML(doc.post);
                 })
                 callback(null,docs);//返回查询的文档数据.(数组形式)
+            })
+        })
+    })
+}
+//可以根据用户名、发布时间、文章标题来查询某一篇具体的文章
+Post.getOne = function(name,minute,title,callback){
+    mongo.open(function(err,db){
+        if(err){
+            return callback(err);
+        }
+        db.collection('posts',function(err,collection){
+            if(err){
+                mongo.close();
+                return callback(err);
+            }
+            collection.findOne({
+                "name":name,
+                "time.minute":minute,
+                "title":title
+            },function(err,doc){
+                mongo.close();
+                if(err){
+                    callback(err);
+                }
+                //markdown解析一下
+                doc.post = markdown.toHTML(doc.post);
+                callback(null,doc);
             })
         })
     })

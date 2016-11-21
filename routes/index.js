@@ -42,7 +42,7 @@ function checkNotLogin(req, res, next) {
 module.exports = function(app){
     //首页
     app.get('/',function(req,res){
-        Post.get(null,function(err,posts){
+        Post.getAll(null,function(err,posts){
             if(err){
                 posts = [];
             }
@@ -217,5 +217,46 @@ module.exports = function(app){
         req.session.user = null;
         req.flash('success','成功退出');
         res.redirect('/');
+    })
+    //点击用户名，可以看到用户发布的所有文章
+    app.get('/u/:name',function(req,res){
+        //req.params.name就可以获取到GET请求中的参数了
+        //1.检查一下用户名是否存在
+        User.get(req.params.name,function(err,user){
+            if(!user){
+                req.flash('error','用户名不存在');
+                return res.redirect('/');
+            }
+            //2.使用Post的getAll方法来获取用户所对应的文章
+            Post.getAll(user.name,function(err,posts){
+                if(err){
+                    req.flash('error','没有找到用户文章');
+                    return res.redirect('/');
+                }
+                res.render('user',{
+                    title:user.name,
+                    posts:posts,
+                    user:req.session.user,
+                    success:req.flash('success').toString(),
+                    error:req.flash('error').toString()
+                })
+            })
+        })
+    })
+    //文章详情页面
+    app.get('/u/:name/:minute/:title',function(req,res){
+        Post.getOne(req.params.name,req.params.minute,req.params.title,function(err,post){
+            if(err){
+                req.flash('error','找不到当前文章');
+                return res.redirect('/');
+            }
+            res.render('article',{
+                title:req.params.name,
+                user:req.session.user,
+                post:post,
+                success:req.flash('success').toString(),
+                error:req.flash('error').toString()
+            })
+        })
     })
 }
