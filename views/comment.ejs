@@ -26,7 +26,7 @@
     window.onload = function(){
         var textarea = document.querySelector('#tb');
         var button  = document.querySelector('#sb');
-        button.onsubmit = function(e){
+        button.onclick = function(e){
             e.preventDefault();
             location.href = '/login';
         }

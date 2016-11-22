@@ -61,7 +61,7 @@ Post.prototype.save  = function(callback){
     })
 }
 //获取所有的文章
-Post.getAll = function(name,callback){
+Post.getTen = function(name,page,callback){
     mongo.open(function(err,db){
         if(err){
             return callback(err);
@@ -76,19 +76,25 @@ Post.getAll = function(name,callback){
                 query.name = name;
             }
             //查询
-            collection.find(query).sort({
-                time:-1
-            }).toArray(function(err,docs){
-                mongo.close();
-                if(err){
-                    return callback(err);
-                }
-                //在返回结果的时候，让markdown格式化一下
-                //就可以直接使用markdown的语法规则来解析HTML标签了。
-                docs.forEach(function(doc){
-                    doc.post = markdown.toHTML(doc.post);
+            collection.count(query,function(err,total){
+                //total是查询的文章总数量
+                collection.find(query,{
+                    //根据当前的页数算出每页开始的位置pageStart
+                    skip: (page - 1) * 10,
+                    //pageSize 理解为步长
+                    limit:10
+                }).sort({
+                    time:-1
+                }).toArray(function(err,docs){
+                    mongo.close();
+                    if(err){
+                        return callback(err);
+                    }
+                    docs.forEach(function (doc) {
+                        doc.post = markdown.toHTML(doc.post);
+                    });
+                    callback(null,docs,total);
                 })
-                callback(null,docs);//返回查询的文档数据.(数组形式)
             })
         })
     })
