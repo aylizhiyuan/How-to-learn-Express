@@ -251,12 +251,58 @@ module.exports = function(app){
                 return res.redirect('/');
             }
             res.render('article',{
-                title:req.params.name,
+                title:req.params.title,
                 user:req.session.user,
                 post:post,
                 success:req.flash('success').toString(),
                 error:req.flash('error').toString()
             })
+        })
+    })
+    //文章编辑
+    app.get('/edit/:name/:minute/:title',checkLogin);
+    app.get('/edit/:name/:minute/:title',function(req,res){
+        //获取到当前的用户
+        var currentUser = req.session.user;
+        Post.edit(currentUser.name,req.params.minute,req.params.title,function(err,post){
+            if(err){
+                req.flash('error',err);
+                return res.redirect('back');
+            }
+            res.render('edit',{
+                title:'编辑文章',
+                user:req.session.user,
+                post:post,
+                success:req.flash('success').toString(),
+                error:req.flash('error').toString()
+            })
+        })
+    })
+    //文章编辑行为
+    app.post('/edit/:name/:minute/:title',checkLogin);
+    app.post('/edit/:name/:minute/:title',function(req,res){
+        Post.update(req.params.name,req.params.minute,req.params.title,
+            req.body.post,function(err){
+                //encodeURI是防止有中文的情况下，对中文的字符进行转义
+                var url = encodeURI('/u/'+ req.params.name + '/' + req.params.minute + '/' + req.params.title);
+                if(err){
+                    req.flash('error',err);
+                    return res.redirect(url);
+                }
+                req.flash('success','编辑成功');
+                return res.redirect(url);
+        })
+    })
+    //文章删除行为
+    app.get('/remove/:name/:minute/:title',checkLogin);
+    app.get('/remove/:name/:minute/:title',function(req,res){
+        Post.remove(req.params.name,req.params.minute,req.params.title,function(err){
+            if(err){
+                req.flash('error',err);
+                return res.redirect('back');
+            }
+            req.flash('success','修改成功');
+            res.redirect('/');
         })
     })
 }

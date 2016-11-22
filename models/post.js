@@ -28,7 +28,7 @@ Post.prototype.save  = function(callback){
         minute:date.getFullYear() + '-' +
         (date.getMonth() + 1) + '-' + date.getDate() + ' ' +
             date.getHours() + ':' +
-        (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes())
+        (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes() + ':' + date.getSeconds())
     };
     //我们要保存的数据
     var post = {
@@ -114,6 +114,83 @@ Post.getOne = function(name,minute,title,callback){
                 //markdown解析一下
                 doc.post = markdown.toHTML(doc.post);
                 callback(null,doc);
+            })
+        })
+    })
+}
+//为文章添加编辑功能，返回markdown格式的原始内容
+Post.edit = function(name,minute,title,callback){
+    mongo.open(function(err,db){
+        if(err){
+            return callback(err);
+        }
+        db.collection('posts',function(err,collection){
+            if(err){
+                mongo.close();
+                return callback(err);
+            }
+            collection.findOne({
+                "name":name,
+                "time.minute":minute,
+                "title":title
+            },function(err,doc){
+                mongo.close();
+                if(err){
+                    return callback(err);
+                }
+                return callback(null,doc);//返回查询文章的原始格式.
+            })
+        })
+    })
+}
+//修改操作
+Post.update = function(name,minute,title,post,callback){
+    mongo.open(function(err,db){
+        if(err){
+            return callback(err);
+        }
+        db.collection('posts',function(err,collection){
+            if(err){
+                mongo.close();
+                return callback(err);
+            }
+            collection.update({
+                "name":name,
+                "time.minute":minute,
+                "title":title
+            },{$set:{post:post}},function(err){
+                mongo.close();
+                if(err){
+                    return callback(err);
+                }
+                callback(null);
+            })
+        })
+    })
+}
+//删除操作
+Post.remove = function(name,minute,title,callback){
+    mongo.open(function(err,db){
+        if(err){
+            return callback(err);
+        }
+        db.collection('posts',function(err,collection){
+            if(err){
+                mongo.close();
+                return callback(err);
+            }
+            collection.remove({
+                "name":name,
+                "time.minute":minute,
+                "title":title
+            },{
+                w:1
+            },function(err){
+                mongo.close();
+                if(err){
+                    return callback(err);
+                }
+                callback(null);
             })
         })
     })
