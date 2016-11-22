@@ -23,19 +23,18 @@ if (doc) {
 接下来我们在 models 下新建 comment.js 文件，添加如下代码：
 var mongodb = require('./db');
 
-function Comment(name, day, title, comment) {
+function Comment(name, minute, title, comment) {
   this.name = name;
-  this.day = day;
+  this.minute = minute;
   this.title = title;
   this.comment = comment;
 }
-
 module.exports = Comment;
 
 //存储一条留言信息
 Comment.prototype.save = function(callback) {
   var name = this.name,
-      day = this.day,
+      minute = this.minute,
       title = this.title,
       comment = this.comment;
   //打开数据库
@@ -52,7 +51,7 @@ Comment.prototype.save = function(callback) {
       //通过用户名、时间及标题查找文档，并把一条留言对象添加到该文档的 comments 数组里
       collection.update({
         "name": name,
-        "time.day": day,
+        "time.minute":minute,
         "title": title
       }, {
         $push: {"comments": comment}
@@ -73,26 +72,44 @@ Comment = require('../models/comment.js');
 
 接下来我们创建 comment 的视图文件，在 views 文件夹下新建 comment.ejs ，添加如下代码(e.g. 首先要先插入一个留言再显示)：
 
-<br />
-<% post.comments.forEach(function (comment, index) { %>
-  <p><a href="<%= comment.website %>"><%= comment.name %></a>
-  <span class="info"> 回复于 <%= comment.time %></span></p>
-  <p><%- comment.content %></p>
-<% }) %>
-
-<form method="post" action="/u/<%= post.name %>/<%= post.time.day %>/<%= post.title %>">
+<br>
+<!--留言的展示-->
+<% post.comments.forEach(function(comment){ %>
+    <p>
+        <%= comment.name %>
+        <span class="info"> 回复于 <%= comment.time %></span>
+    </p>
+    <p><%- comment.content %></p>
+<% })%>
+<!--添加留言的表单-->
 <% if (user) { %>
-  姓名：<input type="text" name="name" value="<%= user.name %>" /><br />
-  邮箱：<input type="text" name="email" value="<%= user.email %>" /><br />
-  网址：<input type="text" name="website" value="/u/<%= user.name %>" /><br />
-<% } else { %>
-  姓名：<input type="text" name="name" /><br />
-  邮箱：<input type="text" name="email" /><br />
-  网址：<input type="text" name="website" value="http://" /><br />
-<% } %>
-  <textarea name="content" rows="5" cols="80"></textarea><br />
-  <input type="submit" value="留言" />
+<form method="post" action="/comment/<%= post.name %>/<%= post.time.minute %>/<%= post.title %>">
+    发布人:<%= user.name %>
+    <input type="hidden" name="name" value="<%= user.name %>"/><br><br>
+    <textarea name="content" rows="5" cols="80"></textarea><br>
+    <input type="submit" value="留言" />
 </form>
+<% }else{ %>
+    <form method="post">
+        回应请先<a href="/login">登录</a>或<a href="/reg">注册</a>
+        <textarea name="content" rows="5" cols="80" id="tb"></textarea><br>
+        <input type="submit" value="留言" id="sb" />
+    </form>
+<% } %>
+<script>
+    window.onload = function(){
+        var textarea = document.querySelector('#tb');
+        var button  = document.querySelector('#sb');
+        button.onclick = function(e){
+            e.preventDefault();
+            location.href = '/login';
+        }
+        textarea.onfocus = function(){
+            location.href =  '/login';
+        }
+    }
+</script>
+
 
 
 打开 article.ejs ，在 <%- include footer %> 前添加一行代码：
@@ -100,19 +117,16 @@ Comment = require('../models/comment.js');
 <%- include comment %>
 
 最后，修改 index.js ，注册留言的 POST 响应，在 app.get('/u/:name/:day/:title') 后添加如下代码：
-
-app.post('/u/:name/:day/:title', function (req, res) {
+app.post('/comment/:name/:minute/:title', function (req, res) {
   var date = new Date(),
       time = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " +
              date.getHours() + ":" + (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes());
   var comment = {
       name: req.body.name,
-      email: req.body.email,
-      website: req.body.website,
       time: time,
       content: req.body.content
   };
-  var newComment = new Comment(req.params.name, req.params.day, req.params.title, comment);
+  var newComment = new Comment(req.params.name, req.params.minute, req.params.title, comment);
   newComment.save(function (err) {
     if (err) {
       req.flash('error', err);
@@ -122,7 +136,6 @@ app.post('/u/:name/:day/:title', function (req, res) {
     res.redirect('back');
   });
 });
-
 注意：这里我们使用 res.redirect('back'); ，即留言成功后返回到该文章页。
 
 

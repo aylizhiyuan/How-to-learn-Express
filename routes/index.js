@@ -2,6 +2,8 @@
 var User = require('../models/user');
 //发表需要的Post类
 var Post = require('../models/post');
+//引入留言需要的Comment类
+var Comment = require('../models/comment');
 //需要引入一个加密的模块
 var crypto = require('crypto');
 //引入multer插件
@@ -257,6 +259,27 @@ module.exports = function(app){
                 success:req.flash('success').toString(),
                 error:req.flash('error').toString()
             })
+        })
+    })
+    //文章的留言发布
+    app.post('/comment/:name/:minute/:title',function(req,res){
+        var date = new Date();
+        var time = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " +
+            date.getHours() + ":" + (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes());
+        var comment = {
+            name:req.body.name,
+            time:time,
+            content:req.body.content
+        }
+        var newCommnet = new Comment(req.params.name,req.params.minute,req.params.title,comment);
+        newCommnet.save(function(err){
+            if(err){
+                req.flash('error',err);
+                return res.redirect('back');
+            }
+            req.flash('success','发布成功');
+            res.redirect('back');
+
         })
     })
     //文章编辑

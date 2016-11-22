@@ -35,7 +35,9 @@ Post.prototype.save  = function(callback){
         name:this.name,
         time:time,
         title:this.title,
-        post:this.post
+        post:this.post,
+        //新增的留言字段
+        comments:[]
     }
     //接下来就是常规的打开数据库->读取posts集合->内容插入->关闭数据库
     mongo.open(function(err,db){
@@ -113,6 +115,10 @@ Post.getOne = function(name,minute,title,callback){
                 }
                 //markdown解析一下
                 doc.post = markdown.toHTML(doc.post);
+                //把留言的内容用markdown解析一下
+                doc.comments.forEach(function(comment){
+                    comment.content = markdown.toHTML(comment.content);
+                })
                 callback(null,doc);
             })
         })
