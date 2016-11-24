@@ -4,7 +4,7 @@
 var mongo = require('./db');
 //引入markdown插件
 var markdown = require('markdown').markdown;
-function Post(name,title,post){
+function Post(name,title,tags,post){
     //发布人
     this.name = name;
     //标题
@@ -12,6 +12,8 @@ function Post(name,title,post){
     //内容
     //XSS跨站脚本攻击的预防.
     //this.post = post.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    //接收一下标签信息
+    this.tags = tags;
     this.post = post;
 }
 module.exports = Post;
@@ -35,6 +37,8 @@ Post.prototype.save  = function(callback){
         name:this.name,
         time:time,
         title:this.title,
+        //接收一下标签信息
+        tags:this.tags,
         post:this.post,
         //新增的留言字段
         comments:[]
@@ -220,6 +224,56 @@ Post.getArchive = function(callback){
             }
             //只获取到发布人，发布时间，发布的标题
             collection.find({},{
+                "name":1,
+                "time":1,
+                "title":1
+            }).sort({
+                time:-1
+            }).toArray(function(err,docs){
+                mongo.close();
+                if(err){
+                    return callback(err);
+                }
+                callback(null,docs);
+            })
+        })
+    })
+}
+//找到所有的标签信息
+Post.getTags = function(callback){
+    mongo.open(function(err,db){
+        if(err){
+            return callback(err);
+        }
+        db.collection('posts',function(err,collection){
+            if(err){
+                mongo.close();
+                return callback(err);
+            }
+            collection.distinct('tags',function(err,docs){
+                mongo.close();
+                if(err){
+                    return callback(err);
+                }
+                callback(null,docs);//返回所有的不重复的标签
+            })
+        })
+    })
+}
+//获取标签所对应的文章
+Post.getTag = function(tag,callback){
+    mongo.open(function(err,db){
+        if(err){
+            return callback(err);
+        }
+        db.collection('posts',function(err,collection){
+            if(err){
+                mongo.close();
+                return callback(err);
+            }
+            collection.find({
+                "tags":tag
+            },{
                 "name":1,
                 "time":1,
                 "title":1

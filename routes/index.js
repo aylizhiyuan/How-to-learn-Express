@@ -189,7 +189,9 @@ module.exports = function(app){
             req.flash('error','内容不能为空');
             return res.redirect('/post');
         }
-        var post = new Post(currentUser.name,req.body.title,req.body.post);
+        //添加一下标签信息
+        var tags = [req.body.tag1,req.body.tag2,req.body.tag3];
+        var post = new Post(currentUser.name,req.body.title,tags,req.body.post);
         post.save(function(err){
             if(err){
                 req.flash('error',err);
@@ -346,6 +348,38 @@ module.exports = function(app){
                 title:'存档',
                 posts:posts,
                 user:req.session.user,
+                success:req.flash('success').toString(),
+                error:req.flash('error').toString()
+            })
+        })
+    })
+    //文章标签页
+    app.get('/tags',function(req,res){
+        Post.getTags(function(err,posts){
+            if(err){
+                req.flash('error',err);
+                res.redirect('/');
+            }
+            res.render('tags',{
+                title:'标签',
+                posts:posts,
+                user:req.session.user,
+                success:req.flash('success').toString(),
+                error:req.flash('error').toString()
+            })
+        })
+    })
+    //标签对应的文章集合
+    app.get('/tags/:tag',function(req,res){
+        Post.getTag(req.params.tag,function(err,posts){
+            if(err){
+                req.flash('error',err);
+                return res.redirect('/');
+            }
+            res.render('tag',{
+                title:'TAG:' + req.params.tag,
+                user:req.session.user,
+                posts:posts,
                 success:req.flash('success').toString(),
                 error:req.flash('error').toString()
             })

@@ -3,7 +3,9 @@
 打开 post.ejs ，在 <input type="text" name="title" /><br /> 后添加：
 
 标签：<br />
-<input type="text" name="tag1" /><input type="text" name="tag2" /><input type="text" name="tag3" /><br />
+<input type="text" name="tag1" />
+<input type="text" name="tag2" />
+<input type="text" name="tag3" /><br />
 
 打开 index.js ，将 app.post('/post') 内的：
 
