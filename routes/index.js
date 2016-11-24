@@ -385,4 +385,20 @@ module.exports = function(app){
             })
         })
     })
+    //搜索
+    app.get('/search',function(req,res){
+        Post.search(req.query.keyword,function(err,posts){
+            if(err){
+                req.flash('error',err);
+                return res.redirect('/');
+            }
+            res.render('search',{
+                title:'SEARCH :' + req.query.keyword,
+                user:req.session.user,
+                posts:posts,
+                success:req.flash('success').toString(),
+                error:req.flash('error').toString()
+            })
+        })
+    })
 }

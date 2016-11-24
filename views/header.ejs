@@ -21,6 +21,12 @@
     <span><a href="/login" title="登录">登录</a></span>
     <span><a href="/reg" title="注册">注册</a></span>
     <% } %>
+    <!--新增搜索功能-->
+    <span>
+        <form action="/search" method="get">
+            <input class="search" type="text" placeholder="SEARCH" name="keyword">
+        </form>
+    </span>
 </nav>
 <article>
     <% if (success) { %>

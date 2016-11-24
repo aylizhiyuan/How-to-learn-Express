@@ -1,6 +1,10 @@
 首先，我们修改 header.ejs ，在 </nav> 前添加一行代码：
 
-<span><form action="/search" method="GET"><input type="text" name="keyword" placeholder="SEARCH" class="search" /></form></span>
+<span>
+<form action="/search" method="GET">
+<input type="text" name="keyword" placeholder="SEARCH" class="search" />
+</form>
+</span>
 
 在 style.css 中添加一行样式：
 
