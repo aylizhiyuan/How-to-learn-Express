@@ -207,3 +207,31 @@ Post.remove = function(name,minute,title,callback){
         })
     })
 }
+//返回包含用户名，发布时间，标题的文章。
+Post.getArchive = function(callback){
+    mongo.open(function(err,db){
+        if(err){
+            return callback(err);
+        }
+        db.collection('posts',function(err,collection){
+            if(err){
+                mongo.close();
+                return callback(err);
+            }
+            //只获取到发布人，发布时间，发布的标题
+            collection.find({},{
+                "name":1,
+                "time":1,
+                "title":1
+            }).sort({
+                time:-1
+            }).toArray(function(err,docs){
+                mongo.close();
+                if(err){
+                    return callback(err);
+                }
+                callback(null,docs);
+            })
+        })
+    })
+}

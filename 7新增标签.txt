@@ -9,8 +9,6 @@
 
 var currentUser = req.session.user,
     post = new Post(currentUser.name, req.body.title, req.body.post);
-
-
 修改为:
 
  var currentUser = req.session.user;
