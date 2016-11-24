@@ -41,7 +41,9 @@ Post.prototype.save  = function(callback){
         tags:this.tags,
         post:this.post,
         //新增的留言字段
-        comments:[]
+        comments:[],
+        //新增访问量
+        pv:0
     }
     //接下来就是常规的打开数据库->读取posts集合->内容插入->关闭数据库
     mongo.open(function(err,db){
@@ -119,9 +121,24 @@ Post.getOne = function(name,minute,title,callback){
                 "time.minute":minute,
                 "title":title
             },function(err,doc){
-                mongo.close();
                 if(err){
-                    callback(err);
+                    mongo.close();
+                    return callback(err);
+                }
+                //增加访问量的代码
+                if(doc){
+                    collection.update({
+                        "name":name,
+                        "time.minute":minute,
+                        "title":title
+                    },{
+                        $inc:{'pv':1}
+                    },function(err){
+                        mongo.close();
+                        if(err){
+                            return callback(err);
+                        }
+                    })
                 }
                 //markdown解析一下
                 doc.post = markdown.toHTML(doc.post);
